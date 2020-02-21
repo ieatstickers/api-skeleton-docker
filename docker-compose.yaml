@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+
+  skeleton_php:
+    build:
+      context: ./docker/php
+      args:
+        - WITH_XDEBUG=true
+    ports:
+      - 9000:9000
+    env_file: .env
+    volumes:
+      - ./:/var/www/container
+      - ./../api-skeleton:/var/api-skeleton
+#      - ./../www:/var/www
+      - ./docker/php/php.conf:/usr/local/etc/php-fpm.d/php.conf
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+  skeleton_nginx:
+    build:
+      context: ./docker/nginx
+    ports:
+      - 80:80
+      - 8080:80
+    volumes:
+      - ./docker/nginx/vhosts:/etc/nginx/conf.d
+      - ./../api-skeleton/site/api.skeleton.com/public:/var/api-skeleton/site/api.skeleton.com/public
+      - ./../api-skeleton/site/www.skeleton.com/public:/var/api-skeleton/site/www.skeleton.com/public
+#      - ./../www/public:/var/www/public
+    depends_on:
+      - skeleton_php
+  skeleton_mysql:
+    build:
+      context: ./docker/mysql
+    env_file: .env
+    ports:
+      - 3306:3306
+    depends_on:
+      - skeleton_php
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
